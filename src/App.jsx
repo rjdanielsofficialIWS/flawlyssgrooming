@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
   Bath,
@@ -107,11 +107,29 @@ function App() {
   const [selectedAnimal, setSelectedAnimal] = useState('')
   const [gallery, setGallery] = useState(() => getGalleryState())
   const [homepageMedia, setHomepageMediaState] = useState(() => getHomepageMedia())
+  const journalVideoRef = useRef(null)
 
   useEffect(() => subscribeToCrmUpdates(() => {
     setGallery(getGalleryState())
     setHomepageMediaState(getHomepageMedia())
   }), [])
+
+  useEffect(() => {
+    const video = journalVideoRef.current
+    if (!video) return
+
+    const playVideo = () => {
+      video.play().catch(() => {})
+    }
+
+    if (video.readyState >= 3) {
+      playVideo()
+      return
+    }
+
+    video.addEventListener('canplay', playVideo, { once: true })
+    return () => video.removeEventListener('canplay', playVideo)
+  }, [homepageMedia['journal-video']?.src])
 
   const galleryPreview = useMemo(() => galleryCategories.map((category) => ({
     ...category,
@@ -187,8 +205,10 @@ function App() {
           </Reveal>
           <Reveal className="journal-video-card" delay={0.14}>
             <video
+              ref={journalVideoRef}
               src={homepageMedia['journal-video'].src}
               poster="/grooming-placeholder-poster.jpg"
+              preload="auto"
               autoPlay
               muted
               loop

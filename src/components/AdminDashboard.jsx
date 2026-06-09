@@ -64,7 +64,7 @@ function formatDate(value, options = {}) {
   }).format(date)
 }
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ onNavigate }) {
   const [authenticated, setAuthenticated] = useState(() => isAdminSessionActive())
   const [loginPasscode, setLoginPasscode] = useState('')
   const [loginError, setLoginError] = useState('')
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
           </button>
         </nav>
         <div className="admin-sidebar-footer">
-          <a href="/" target="_blank" rel="noreferrer"><ExternalLink /> View website</a>
+          <a href="/" onClick={onNavigate?.('/')}><ExternalLink /> View website</a>
           <p>Browser-persisted CRM</p>
         </div>
       </aside>
@@ -316,7 +316,7 @@ export default function AdminDashboard() {
             <>
               <div className="admin-page-heading">
                 <div><p className="admin-kicker">Content manager</p><h1>Fur Gallery</h1><span>Upload and organize photos by grooming service.</span></div>
-                <a className="admin-secondary-action" href="/fur-gallery" target="_blank" rel="noreferrer"><ExternalLink /> Preview gallery</a>
+                <a className="admin-secondary-action" href="/fur-gallery" onClick={onNavigate?.('/fur-gallery')}><ExternalLink /> Preview gallery</a>
               </div>
               {notice && <div className="admin-notice" role="status"><Check /> {notice}</div>}
               <div className="admin-gallery-categories">
@@ -355,7 +355,7 @@ export default function AdminDashboard() {
             <>
               <div className="admin-page-heading">
                 <div><p className="admin-kicker">Content manager</p><h1>Homepage media</h1><span>Replace every image used throughout the homepage.</span></div>
-                <a className="admin-secondary-action" href="/" target="_blank" rel="noreferrer"><ExternalLink /> Preview homepage</a>
+                <a className="admin-secondary-action" href="/" onClick={onNavigate?.('/')}><ExternalLink /> Preview homepage</a>
               </div>
               {notice && <div className="admin-notice" role="status"><Check /> {notice}</div>}
               <section className="admin-panel admin-home-media-panel">

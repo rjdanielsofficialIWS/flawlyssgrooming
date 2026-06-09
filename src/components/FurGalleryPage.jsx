@@ -5,7 +5,7 @@ import ImageReveal from '@/components/ui/image-tiles'
 import { Reveal } from '@/components/ui/reveal'
 import { galleryCategories, getGalleryState, subscribeToCrmUpdates } from '@/lib/crmStore'
 
-export default function FurGalleryPage() {
+export default function FurGalleryPage({ onNavigate }) {
   const [gallery, setGallery] = useState(() => getGalleryState())
 
   useEffect(() => subscribeToCrmUpdates(() => setGallery(getGalleryState())), [])
@@ -33,7 +33,7 @@ export default function FurGalleryPage() {
     <main className="fur-page" id="main">
       <FloatingBubblesBackground className="fur-page-bubbles" density={24} tone="blush" />
       <Reveal className="fur-page-hero">
-        <a className="back-link" href="/"><ArrowLeft /> Back to home</a>
+        <a className="back-link" href="/" onClick={onNavigate?.('/')}><ArrowLeft /> Back to home</a>
         <p className="eyebrow">Fur Gallery</p>
         <h1>Grooming results worth showing off.</h1>
         <p>

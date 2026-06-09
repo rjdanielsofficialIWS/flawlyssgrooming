@@ -98,8 +98,8 @@ const services = [
 ]
 
 function App() {
-  const isFurGalleryPage = window.location.pathname === '/fur-gallery'
-  const isAdminPage = window.location.pathname.startsWith('/admin')
+  const [pathname, setPathname] = useState(() => window.location.pathname)
+  const [hash, setHash] = useState(() => window.location.hash)
   const [menuOpen, setMenuOpen] = useState(false)
   const [slider, setSlider] = useState(50)
   const [activeService, setActiveService] = useState(1)
@@ -108,11 +108,22 @@ function App() {
   const [gallery, setGallery] = useState(() => getGalleryState())
   const [homepageMedia, setHomepageMediaState] = useState(() => getHomepageMedia())
   const journalVideoRef = useRef(null)
+  const isFurGalleryPage = pathname === '/fur-gallery'
+  const isAdminPage = pathname.startsWith('/admin')
 
   useEffect(() => subscribeToCrmUpdates(() => {
     setGallery(getGalleryState())
     setHomepageMediaState(getHomepageMedia())
   }), [])
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setPathname(window.location.pathname)
+      setHash(window.location.hash)
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
 
   useEffect(() => {
     const video = journalVideoRef.current
@@ -131,6 +142,12 @@ function App() {
     return () => video.removeEventListener('canplay', playVideo)
   }, [homepageMedia['journal-video']?.src])
 
+  useEffect(() => {
+    if (!hash) return
+    const target = document.querySelector(hash)
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [pathname, hash])
+
   const galleryPreview = useMemo(() => galleryCategories.map((category) => ({
     ...category,
     image: gallery[category.id]?.[0]?.src || category.defaultImages[0],
@@ -139,7 +156,14 @@ function App() {
 
   const selectedService = services[activeService]
 
-  const closeMenu = () => setMenuOpen(false)
+  const navigateTo = (to) => (event) => {
+    event.preventDefault()
+    const url = new URL(to, window.location.origin)
+    window.history.pushState({}, '', `${url.pathname}${url.hash}`)
+    setPathname(url.pathname)
+    setHash(url.hash)
+    setMenuOpen(false)
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -150,14 +174,14 @@ function App() {
     setSelectedAnimal('')
   }
 
-  if (isAdminPage) return <AdminDashboard />
+  if (isAdminPage) return <AdminDashboard onNavigate={navigateTo} />
 
   return (
     <div className="site-shell">
       <a className="skip-link" href="#main">Skip to content</a>
 
       <header className="header">
-        <a className="brand" href="/" onClick={closeMenu} aria-label="FlawLyss Grooming home">
+        <a className="brand" href="/" onClick={navigateTo('/')} aria-label="FlawLyss Grooming home">
           <img src={homepageMedia.logo.src} alt="" />
           <span><strong>FlawLyss</strong> Grooming</span>
         </a>
@@ -173,16 +197,16 @@ function App() {
         </button>
 
         <nav className={menuOpen ? 'nav nav-open' : 'nav'} aria-label="Main navigation">
-          <a href="/#services" onClick={closeMenu}>Services</a>
-          <a href="/fur-gallery" onClick={closeMenu}>Fur Gallery</a>
-          <a href="/#studio" onClick={closeMenu}>Meet Alyssa</a>
-          <a href="/#contact" onClick={closeMenu}>Contact Us</a>
-          <a className="nav-cta" href="/#booking" onClick={closeMenu}>Book an appointment</a>
+          <a href="/#services" onClick={navigateTo('/#services')}>Services</a>
+          <a href="/fur-gallery" onClick={navigateTo('/fur-gallery')}>Fur Gallery</a>
+          <a href="/#studio" onClick={navigateTo('/#studio')}>Meet Alyssa</a>
+          <a href="/#contact" onClick={navigateTo('/#contact')}>Contact Us</a>
+          <a className="nav-cta" href="/#booking" onClick={navigateTo('/#booking')}>Book an appointment</a>
         </nav>
       </header>
 
       {isFurGalleryPage ? (
-        <FurGalleryPage />
+        <FurGalleryPage onNavigate={navigateTo} />
       ) : (
       <main id="main">
         <section className="banner-hero" id="home" aria-label="FlawLyss Grooming">
@@ -252,7 +276,7 @@ function App() {
                 <div><dt>Groomer note</dt><dd>Patient, sweet, and camera ready</dd></div>
               </dl>
               <div className="receipt-total"><span>Final result</span><strong>100% FlawLyss</strong></div>
-              <a href="/fur-gallery">See more transformations <ArrowRight /></a>
+              <a href="/fur-gallery" onClick={navigateTo('/fur-gallery')}>See more transformations <ArrowRight /></a>
             </Reveal>
           </div>
         </section>
@@ -332,11 +356,11 @@ function App() {
         <section className="gallery-editorial">
           <div className="gallery-editorial-heading">
             <div><p className="eyebrow">Fresh from the table</p><h2>The latest<br /><em>FlawLyss faces.</em></h2></div>
-            <a href="/fur-gallery">Open the Fur Gallery <ArrowRight /></a>
+            <a href="/fur-gallery" onClick={navigateTo('/fur-gallery')}>Open the Fur Gallery <ArrowRight /></a>
           </div>
           <div className="gallery-filmstrip">
             {galleryPreview.map((item, index) => (
-              <a className={`film-frame frame-${index + 1}`} href="/fur-gallery" key={item.id}>
+              <a className={`film-frame frame-${index + 1}`} href="/fur-gallery" onClick={navigateTo('/fur-gallery')} key={item.id}>
                 <div><img src={item.image} alt={`${item.name} grooming result`} /><span>0{index + 1}</span></div>
                 <small>{item.name}</small>
                 <strong>{item.title}</strong>
@@ -441,16 +465,16 @@ function App() {
       )}
 
       <footer className="footer">
-        <a className="footer-brand" href="/"><img src={homepageMedia.logo.src} alt="" /> FlawLyss Grooming</a>
+        <a className="footer-brand" href="/" onClick={navigateTo('/')}><img src={homepageMedia.logo.src} alt="" /> FlawLyss Grooming</a>
         <p>Where every pet leaves flawless.</p>
         <div className="footer-end">
           <p>© 2026 FlawLyss Grooming. All rights reserved.</p>
-          <a className="footer-admin-link" href="/admin"><LockKeyhole /> Admin</a>
+          <a className="footer-admin-link" href="/admin" onClick={navigateTo('/admin')}><LockKeyhole /> Admin</a>
         </div>
       </footer>
 
       {!isFurGalleryPage && (
-        <a className="floating-booking" href="/#booking">
+        <a className="floating-booking" href="/#booking" onClick={navigateTo('/#booking')}>
           <CalendarDays />
           <span>Book</span>
         </a>

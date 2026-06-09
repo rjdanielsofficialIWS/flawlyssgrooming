@@ -27,6 +27,8 @@ import {
   galleryCategories,
   getGalleryState,
   getHomepageMedia,
+  loadGalleryState,
+  loadHomepageMedia,
   saveBookingRequest,
   subscribeToCrmUpdates,
 } from '@/lib/crmStore'
@@ -117,6 +119,20 @@ function App() {
   }), [])
 
   useEffect(() => {
+    let cancelled = false
+    Promise.all([loadGalleryState(), loadHomepageMedia()])
+      .then(([nextGallery, nextHomepageMedia]) => {
+        if (cancelled) return
+        setGallery(nextGallery)
+        setHomepageMediaState(nextHomepageMedia)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
     const handlePopState = () => {
       setPathname(window.location.pathname)
       setHash(window.location.hash)
@@ -165,10 +181,10 @@ function App() {
     setMenuOpen(false)
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const request = Object.fromEntries(new FormData(event.currentTarget).entries())
-    saveBookingRequest(request)
+    await saveBookingRequest(request)
     setSubmitted(true)
     event.currentTarget.reset()
     setSelectedAnimal('')

@@ -30,6 +30,9 @@ import {
   getBookingRequests,
   getGalleryState,
   getHomepageMedia,
+  loadBookingRequests,
+  loadGalleryState,
+  loadHomepageMedia,
   homepageMediaSlots,
   restoreGalleryDefaults,
   restoreHomepageMedia,
@@ -90,6 +93,21 @@ export default function AdminDashboard({ onNavigate }) {
     setHomepageMediaState(getHomepageMedia())
   }), [])
 
+  useEffect(() => {
+    let cancelled = false
+    Promise.all([loadBookingRequests(), loadGalleryState(), loadHomepageMedia()])
+      .then(([nextRequests, nextGallery, nextHomepageMedia]) => {
+        if (cancelled) return
+        setRequests(nextRequests)
+        setGallery(nextGallery)
+        setHomepageMediaState(nextHomepageMedia)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const filteredRequests = useMemo(() => {
     const query = search.trim().toLowerCase()
     return requests.filter((request) => {
@@ -122,7 +140,8 @@ export default function AdminDashboard({ onNavigate }) {
 
     try {
       const images = await Promise.all(Array.from(files).map(compressImage))
-      addGalleryImages(categoryId, images)
+      const nextGallery = await addGalleryImages(categoryId, images)
+      setGallery(nextGallery)
       setNotice(`${images.length} image${images.length === 1 ? '' : 's'} added to the gallery.`)
     } catch (error) {
       setNotice(error.message || 'The images could not be uploaded.')
@@ -131,9 +150,10 @@ export default function AdminDashboard({ onNavigate }) {
     }
   }
 
-  const handleDeleteRequest = (id) => {
+  const handleDeleteRequest = async (id) => {
     if (!window.confirm('Delete this appointment request permanently?')) return
-    deleteBookingRequest(id)
+    const nextRequests = await deleteBookingRequest(id)
+    setRequests(nextRequests)
     setSelectedRequestId(null)
   }
 
@@ -145,7 +165,8 @@ export default function AdminDashboard({ onNavigate }) {
     try {
       const slot = homepageMediaSlots.find((item) => item.id === slotId)
       const media = slot?.type === 'video' ? await readVideoFile(files[0]) : await compressImage(files[0])
-      setHomepageMedia(slotId, media)
+      const nextHomepageMedia = await setHomepageMedia(slotId, media)
+      setHomepageMediaState(nextHomepageMedia)
       setNotice(`Homepage ${slot?.type === 'video' ? 'video' : 'image'} updated successfully.`)
     } catch (error) {
       setNotice(error.message || 'The image could not be uploaded.')
@@ -337,12 +358,15 @@ export default function AdminDashboard({ onNavigate }) {
                             <article key={image.id}>
                               <img src={image.src} alt="" />
                               <div><span title={image.name}>{image.name}</span><small>{image.isDefault ? 'Starter image' : 'Uploaded image'}</small></div>
-                              <button type="button" onClick={() => deleteGalleryImage(category.id, image.id)} aria-label={`Delete ${image.name}`}><Trash2 /></button>
+                              <button type="button" onClick={async () => {
+                                const nextGallery = await deleteGalleryImage(category.id, image.id)
+                                setGallery(nextGallery)
+                              }} aria-label={`Delete ${image.name}`}><Trash2 /></button>
                             </article>
                           ))}
                         </div>
                       ) : (
-                        <div className="admin-empty-state"><Images /><h3>No photos in this category</h3><p>Upload images or restore the starter set.</p><button onClick={() => restoreGalleryDefaults(category.id)}>Restore starter images</button></div>
+                        <div className="admin-empty-state"><Images /><h3>No photos in this category</h3><p>Upload images or restore the starter set.</p><button onClick={async () => { const nextGallery = await restoreGalleryDefaults(category.id); setGallery(nextGallery) }}>Restore starter images</button></div>
                       )}
                     </section>
                   )
@@ -382,7 +406,11 @@ export default function AdminDashboard({ onNavigate }) {
                             <Upload /> {uploadingMediaSlot === slot.id ? 'Processing...' : 'Replace'}
                             <input type="file" accept={slot.type === 'video' ? 'video/webm,video/mp4' : 'image/*'} disabled={uploadingMediaSlot === slot.id} onChange={(event) => { handleHomepageMediaUpload(slot.id, event.target.files); event.target.value = '' }} />
                           </label>
-                          <button type="button" disabled={media.isDefault} onClick={() => { restoreHomepageMedia(slot.id); setNotice(`${slot.name} restored to its default image.`) }}>
+                          <button type="button" disabled={media.isDefault} onClick={async () => {
+                            const nextHomepageMedia = await restoreHomepageMedia(slot.id)
+                            setHomepageMediaState(nextHomepageMedia)
+                            setNotice(`${slot.name} restored to its default image.`)
+                          }}>
                             Restore default
                           </button>
                         </div>
@@ -426,7 +454,10 @@ export default function AdminDashboard({ onNavigate }) {
               <button onClick={() => setSelectedRequestId(null)} aria-label="Close request details"><X /></button>
             </div>
             <label className="admin-status-control">Status
-              <select value={selectedRequest.status} onChange={(event) => updateBookingRequest(selectedRequest.id, { status: event.target.value })}>
+              <select value={selectedRequest.status} onChange={async (event) => {
+                const nextRequests = await updateBookingRequest(selectedRequest.id, { status: event.target.value })
+                setRequests(nextRequests)
+              }}>
                 {statusOptions.map((status) => <option key={status.value} value={status.value}>{status.label}</option>)}
               </select>
             </label>

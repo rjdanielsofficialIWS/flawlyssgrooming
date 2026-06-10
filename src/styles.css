@@ -257,10 +257,10 @@ a {
 .studio-title {
   grid-column: 1 / -1;
   justify-self: center;
-  margin: 0 0 clamp(10px, 2vw, 28px);
+  margin: 0 0 clamp(4px, 1vw, 14px);
   color: var(--pink);
   font-family: 'Playfair Display', serif;
-  font-size: clamp(42px, 5.6vw, 72px);
+  font-size: clamp(40px, 5.2vw, 66px);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 0.95;
@@ -4002,7 +4002,7 @@ fieldset + label {
 
 .studio-story {
   display: grid;
-  padding: clamp(100px, 12vw, 180px) clamp(20px, 8vw, 130px);
+  padding: clamp(74px, 9vw, 120px) clamp(20px, 8vw, 130px);
   overflow: hidden;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
   gap: clamp(70px, 10vw, 150px);

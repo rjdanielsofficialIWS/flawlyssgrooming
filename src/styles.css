@@ -254,6 +254,20 @@ a {
   text-transform: uppercase;
 }
 
+.studio-title {
+  margin: 0 0 18px;
+  color: var(--pink);
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(34px, 4.8vw, 58px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.studio-title + h2 {
+  margin-top: -2px;
+}
+
 h1,
 h2,
 h3,

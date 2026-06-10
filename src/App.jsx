@@ -298,7 +298,7 @@ function App() {
             <div className="studio-stamp"><Heart fill="currentColor" /> Alyssa approved</div>
           </div>
           <Reveal className="studio-copy">
-            <p className="eyebrow">Meet Alyssa</p>
+            <p className="studio-title">Meet Alyssa</p>
             <h2>Patient hands.<br /><em>A sharp eye.</em></h2>
             <p className="studio-lead">“I want every pet to feel understood before I ever pick up the clippers.”</p>
             <p>That means reading body language, taking breaks when needed, and never rushing the details. The result is a groom that respects both comfort and character.</p>

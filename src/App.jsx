@@ -282,25 +282,6 @@ function App() {
               </div>
               <div className="polaroid-note"><Sparkles /> drag to reveal the finish</div>
             </Reveal>
-            <Reveal className="transformation-note" delay={0.12}>
-              <div className="transformation-note-top">
-                <PawPrint />
-                <span>Studio notes<br /><small>Groom record no. 001</small></span>
-              </div>
-              <p className="transformation-note-lead">
-                The goal was a softer silhouette, a tidy finish, and a calm session that never rushed the pet.
-              </p>
-              <div className="transformation-note-list">
-                <div><Heart /><span>Comfort-first handling</span></div>
-                <div><Sparkles /><span>Rounded, camera-ready finish</span></div>
-                <div><Check /><span>Slow pace with gentle breaks</span></div>
-              </div>
-              <div className="transformation-note-footer">
-                <strong>Result</strong>
-                <span>100% FlawLyss</span>
-              </div>
-              <a href="/fur-gallery" onClick={navigateTo('/fur-gallery')}>See more transformations <ArrowRight /></a>
-            </Reveal>
           </div>
         </section>
 
@@ -317,7 +298,7 @@ function App() {
             <div className="studio-stamp"><Heart fill="currentColor" /> Alyssa approved</div>
           </div>
           <Reveal className="studio-copy">
-            <p className="eyebrow">Inside Alyssa’s studio</p>
+            <p className="eyebrow">Meet Alyssa</p>
             <h2>Patient hands.<br /><em>A sharp eye.</em></h2>
             <p className="studio-lead">“I want every pet to feel understood before I ever pick up the clippers.”</p>
             <p>That means reading body language, taking breaks when needed, and never rushing the details. The result is a groom that respects both comfort and character.</p>

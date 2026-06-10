@@ -286,6 +286,7 @@ function App() {
         </section>
 
         <section className="studio-story" id="studio">
+          <p className="studio-title">Meet Alyssa</p>
           <div className="studio-collage">
             <Reveal className="studio-photo studio-photo-main">
               <img src={homepageMedia['studio-main'].src} alt="Alyssa carefully grooming a fluffy white dog" loading="lazy" />
@@ -298,7 +299,6 @@ function App() {
             <div className="studio-stamp"><Heart fill="currentColor" /> Alyssa approved</div>
           </div>
           <Reveal className="studio-copy">
-            <p className="studio-title">Meet Alyssa</p>
             <h2>Patient hands.<br /><em>A sharp eye.</em></h2>
             <p className="studio-lead">“I want every pet to feel understood before I ever pick up the clippers.”</p>
             <p>That means reading body language, taking breaks when needed, and never rushing the details. The result is a groom that respects both comfort and character.</p>

@@ -164,11 +164,15 @@ function App() {
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [pathname, hash])
 
-  const galleryPreview = useMemo(() => galleryCategories.map((category) => ({
-    ...category,
-    image: gallery[category.id]?.[0]?.src || category.defaultImages[0],
-    count: gallery[category.id]?.length || 0,
-  })), [gallery])
+  const galleryPreview = useMemo(() => {
+    const category = galleryCategories[0]
+    return (gallery[category.id] || []).slice(0, 3).map((image, index) => ({
+      id: image.id,
+      image: image.src,
+      name: image.name,
+      index,
+    }))
+  }, [gallery])
 
   const selectedService = services[activeService]
 
@@ -365,10 +369,10 @@ function App() {
           <div className="gallery-filmstrip">
             {galleryPreview.map((item, index) => (
               <a className={`film-frame frame-${index + 1}`} href="/fur-gallery" onClick={navigateTo('/fur-gallery')} key={item.id}>
-                <div><img src={item.image} alt={`${item.name} grooming result`} /><span>0{index + 1}</span></div>
-                <small>{item.name}</small>
-                <strong>{item.title}</strong>
-                <p>{item.count} photos in this collection</p>
+                <div><img src={item.image} alt={item.name || `Grooming gallery photo ${index + 1}`} /><span>0{index + 1}</span></div>
+                <small>Fur Gallery</small>
+                <strong>{item.name || 'A FlawLyss finish'}</strong>
+                <p>View the full gallery</p>
               </a>
             ))}
           </div>

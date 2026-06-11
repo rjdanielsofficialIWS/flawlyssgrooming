@@ -1395,7 +1395,7 @@ em {
   min-width: 0;
   overflow: hidden;
   border: 1px solid rgba(45,21,87,.1);
-  border-radius: 30px;
+  border-radius: 0;
   background: rgba(255,253,248,.94);
   box-shadow: 0 16px 42px rgba(45,21,87,.08);
   transition: box-shadow 220ms ease, transform 220ms ease;
@@ -1422,35 +1422,15 @@ em {
   object-fit: cover;
 }
 
-.gallery-result-copy {
-  display: grid;
-  gap: 10px;
-  padding: 22px 24px 24px;
-}
-
-.gallery-result-copy small {
-  color: var(--pink);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-}
-
-.gallery-result-copy h2 {
-  margin: 9px 0 13px;
-  font-size: 27px;
-  line-height: 1.05;
-}
-
-.gallery-result-copy p {
+.gallery-result-caption {
+  min-height: 68px;
   margin: 0;
-  color: rgba(45,21,87,.62);
-  font-size: 13px;
-}
-
-.gallery-result-copy span {
-  color: rgba(45,21,87,.42);
-  font-size: 11px;
+  padding: 20px 22px;
+  color: var(--plum);
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .comparison-image {
@@ -2363,13 +2343,9 @@ fieldset + label {
     gap: 18px;
   }
 
-  .gallery-result-card {
-    border-radius: 24px;
-  }
-
-  .gallery-result-copy {
+  .gallery-result-caption {
     min-height: auto;
-    padding: 20px;
+    padding: 18px;
   }
 }
 
@@ -3127,7 +3103,7 @@ fieldset + label {
   overflow: hidden;
   min-width: 0;
   border: 1px solid var(--admin-border);
-  border-radius: 14px;
+  border-radius: 4px;
   background: #faf8fb;
 }
 
@@ -3137,22 +3113,36 @@ fieldset + label {
   object-fit: cover;
 }
 
-.admin-image-grid article > div {
+.admin-image-grid article > label {
   display: grid;
-  padding: 11px 42px 12px 12px;
-}
-
-.admin-image-grid span {
-  overflow: hidden;
-  font-size: 11px;
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.admin-image-grid small {
+  padding: 12px 48px 14px 12px;
+  gap: 6px;
   color: var(--admin-muted);
   font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.admin-image-grid input {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: white;
+  color: var(--admin-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.admin-image-grid input:focus {
+  border-color: var(--pink);
+  outline: 2px solid rgba(238,66,125,.16);
+  outline-offset: 1px;
 }
 
 .admin-image-grid button {

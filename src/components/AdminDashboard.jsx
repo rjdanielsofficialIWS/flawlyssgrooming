@@ -44,6 +44,7 @@ import {
   startAdminSession,
   subscribeToCrmUpdates,
   updateBookingRequest,
+  updateGalleryImageCaption,
   verifyAdminPasscode,
 } from '@/lib/crmStore'
 
@@ -155,6 +156,16 @@ export default function AdminDashboard({ onNavigate }) {
     const nextRequests = await deleteBookingRequest(id)
     setRequests(nextRequests)
     setSelectedRequestId(null)
+  }
+
+  const handleCaptionSave = async (categoryId, imageId, caption) => {
+    try {
+      const nextGallery = await updateGalleryImageCaption(categoryId, imageId, caption)
+      setGallery(nextGallery)
+      setNotice('Photo caption saved.')
+    } catch (error) {
+      setNotice(error.message || 'The caption could not be saved.')
+    }
   }
 
   const handleHomepageMediaUpload = async (slotId, files) => {
@@ -290,7 +301,7 @@ export default function AdminDashboard({ onNavigate }) {
               <section className="admin-stats" aria-label="CRM summary">
                 <article><span className="admin-stat-icon pink"><Inbox /></span><div><small>Total requests</small><strong>{requests.length}</strong><p>{newRequests} waiting for review</p></div></article>
                 <article><span className="admin-stat-icon purple"><CalendarDays /></span><div><small>Booked</small><strong>{bookedRequests}</strong><p>Confirmed appointments</p></div></article>
-                <article><span className="admin-stat-icon gold"><Images /></span><div><small>Gallery photos</small><strong>{totalImages}</strong><p>Across {galleryCategories.length} categories</p></div></article>
+                <article><span className="admin-stat-icon gold"><Images /></span><div><small>Gallery photos</small><strong>{totalImages}</strong><p>Published in the Fur Gallery</p></div></article>
               </section>
 
               <div className="admin-overview-grid">
@@ -299,7 +310,7 @@ export default function AdminDashboard({ onNavigate }) {
                   <RequestTable requests={requests.slice(0, 5)} onSelect={(id) => { setSelectedRequestId(id); navigate('requests') }} />
                 </section>
                 <section className="admin-panel admin-quick-panel">
-                  <div className="admin-panel-heading"><div><h2>Gallery status</h2><p>Photos by service</p></div></div>
+                  <div className="admin-panel-heading"><div><h2>Gallery status</h2><p>Your published photo collection</p></div></div>
                   <div className="admin-category-summary">
                     {galleryCategories.map((category) => (
                       <button key={category.id} onClick={() => navigate('gallery')}>
@@ -336,7 +347,7 @@ export default function AdminDashboard({ onNavigate }) {
           {activeView === 'gallery' && (
             <>
               <div className="admin-page-heading">
-                <div><p className="admin-kicker">Content manager</p><h1>Fur Gallery</h1><span>Upload and organize photos by grooming service.</span></div>
+                <div><p className="admin-kicker">Content manager</p><h1>Fur Gallery</h1><span>Upload photos and add a dog’s name or short caption.</span></div>
                 <a className="admin-secondary-action" href="/fur-gallery" onClick={onNavigate?.('/fur-gallery')}><ExternalLink /> Preview gallery</a>
               </div>
               {notice && <div className="admin-notice" role="status"><Check /> {notice}</div>}
@@ -356,17 +367,30 @@ export default function AdminDashboard({ onNavigate }) {
                         <div className="admin-image-grid">
                           {images.map((image) => (
                             <article key={image.id}>
-                              <img src={image.src} alt="" />
-                              <div><span title={image.name}>{image.name}</span><small>{image.isDefault ? 'Starter image' : 'Uploaded image'}</small></div>
+                              <img src={image.src} alt={image.name || ''} />
+                              <label>
+                                Caption or dog’s name
+                                <input
+                                  type="text"
+                                  defaultValue={image.name}
+                                  placeholder="e.g. Bella"
+                                  maxLength="80"
+                                  onBlur={(event) => {
+                                    if (event.target.value.trim() !== image.name) {
+                                      handleCaptionSave(category.id, image.id, event.target.value)
+                                    }
+                                  }}
+                                />
+                              </label>
                               <button type="button" onClick={async () => {
                                 const nextGallery = await deleteGalleryImage(category.id, image.id)
                                 setGallery(nextGallery)
-                              }} aria-label={`Delete ${image.name}`}><Trash2 /></button>
+                              }} aria-label={`Delete ${image.name || 'gallery photo'}`}><Trash2 /></button>
                             </article>
                           ))}
                         </div>
                       ) : (
-                        <div className="admin-empty-state"><Images /><h3>No photos in this category</h3><p>Upload images or restore the starter set.</p><button onClick={async () => { const nextGallery = await restoreGalleryDefaults(category.id); setGallery(nextGallery) }}>Restore starter images</button></div>
+                        <div className="admin-empty-state"><Images /><h3>No gallery photos yet</h3><p>Upload images or restore the starter set.</p><button onClick={async () => { const nextGallery = await restoreGalleryDefaults(category.id); setGallery(nextGallery) }}>Restore starter images</button></div>
                       )}
                     </section>
                   )

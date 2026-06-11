@@ -12,33 +12,17 @@ const SUPABASE_REST = `${SUPABASE_URL}/rest/v1`
 
 export const galleryCategories = [
   {
-    id: 'full-haircut',
-    name: 'Bath & Full Haircut',
-    title: 'Soft Rounded Finish',
-    caption: 'Complete transformations, detailed shaping, and polished full-coat finishes.',
+    id: 'gallery',
+    name: 'Fur Gallery',
+    title: 'Recent FlawLyss Faces',
+    caption: 'A simple collection of pets and their finished looks.',
     defaultImages: [
       '/before-groom.webp',
       '/after-groom.webp',
       'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=900&q=85',
-    ],
-  },
-  {
-    id: 'bath-brush',
-    name: 'Bath & Brush',
-    title: 'Fresh Coat Glow',
-    caption: 'Clean, soft coats and gentle brush-outs designed around comfort.',
-    defaultImages: [
       'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=900&q=85',
       'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=900&q=85',
       'https://images.unsplash.com/photo-1534361960057-19889db9621e?auto=format&fit=crop&w=900&q=85',
-    ],
-  },
-  {
-    id: 'bath-trim',
-    name: 'Bath & Trim',
-    title: 'Tidy Trim Touch',
-    caption: 'Neat faces, feet, and finishing details without a complete haircut.',
-    defaultImages: [
       'https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=900&q=85',
       'https://images.unsplash.com/photo-1561037404-61cd46aa615b?auto=format&fit=crop&w=900&q=85',
       '/alyssa-working.jpeg',
@@ -116,7 +100,7 @@ async function supabaseRequest(path, options = {}) {
 }
 
 function normalizeGalleryRows(rows) {
-  const gallery = Object.fromEntries(galleryCategories.map((category) => [category.id, []]))
+  const gallery = { gallery: [] }
 
   if (!rows.length) return defaultGalleryState()
 
@@ -129,8 +113,7 @@ function normalizeGalleryRows(rows) {
       return String(a.created_at || '').localeCompare(String(b.created_at || ''))
     })
     .forEach((row) => {
-      if (!gallery[row.category_id]) gallery[row.category_id] = []
-      gallery[row.category_id].push({
+      gallery.gallery.push({
         id: row.id,
         src: row.src,
         name: row.name,
@@ -198,7 +181,13 @@ function defaultGalleryState() {
 }
 
 export function getGalleryState() {
-  return read(GALLERY_KEY, defaultGalleryState())
+  const stored = read(GALLERY_KEY, null)
+  if (!stored) return defaultGalleryState()
+  if (Array.isArray(stored.gallery)) return stored
+
+  return {
+    gallery: Object.values(stored).flatMap((images) => Array.isArray(images) ? images : []),
+  }
 }
 
 export async function loadGalleryState() {
@@ -321,6 +310,25 @@ export async function deleteGalleryImage(categoryId, imageId) {
   return state
 }
 
+export async function updateGalleryImageCaption(categoryId, imageId, caption) {
+  const state = getGalleryState()
+  const image = (state[categoryId] || []).find((item) => item.id === imageId)
+  if (!image) return state
+
+  image.name = caption.trim()
+
+  if (SUPABASE_ENABLED) {
+    await supabaseRequest(`/gallery_images?id=eq.${encodeURIComponent(imageId)}`, {
+      method: 'PATCH',
+      headers: supabaseHeaders({ Prefer: 'return=representation' }),
+      body: JSON.stringify({ name: image.name }),
+    })
+  }
+
+  write(GALLERY_KEY, state)
+  return state
+}
+
 export async function restoreGalleryDefaults(categoryId) {
   const state = getGalleryState()
   const category = galleryCategories.find((item) => item.id === categoryId)
@@ -342,7 +350,7 @@ export async function restoreGalleryDefaults(categoryId) {
   }))
 
   if (SUPABASE_ENABLED) {
-    await supabaseRequest(`/gallery_images?category_id=eq.${encodeURIComponent(categoryId)}`, {
+    await supabaseRequest('/gallery_images?id=not.is.null', {
       method: 'DELETE',
       headers: supabaseHeaders(),
     })

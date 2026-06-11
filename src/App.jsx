@@ -169,7 +169,8 @@ function App() {
     return (gallery[category.id] || []).slice(0, 3).map((image, index) => ({
       id: image.id,
       image: image.src,
-      name: image.name,
+      name: image.petName,
+      caption: image.caption,
       index,
     }))
   }, [gallery])
@@ -369,10 +370,10 @@ function App() {
           <div className="gallery-filmstrip">
             {galleryPreview.map((item, index) => (
               <a className={`film-frame frame-${index + 1}`} href="/fur-gallery" onClick={navigateTo('/fur-gallery')} key={item.id}>
-                <div><img src={item.image} alt={item.name || `Grooming gallery photo ${index + 1}`} /><span>0{index + 1}</span></div>
+                <div><img src={item.image} alt={item.name || item.caption || `Grooming gallery photo ${index + 1}`} /><span>0{index + 1}</span></div>
                 <small>Fur Gallery</small>
                 <strong>{item.name || 'A FlawLyss finish'}</strong>
-                <p>View the full gallery</p>
+                <p>{item.caption || 'View the full gallery'}</p>
               </a>
             ))}
           </div>

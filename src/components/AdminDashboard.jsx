@@ -44,7 +44,7 @@ import {
   startAdminSession,
   subscribeToCrmUpdates,
   updateBookingRequest,
-  updateGalleryImageCaption,
+  updateGalleryImageDetails,
   verifyAdminPasscode,
 } from '@/lib/crmStore'
 
@@ -158,13 +158,13 @@ export default function AdminDashboard({ onNavigate }) {
     setSelectedRequestId(null)
   }
 
-  const handleCaptionSave = async (categoryId, imageId, caption) => {
+  const handleGalleryDetailsSave = async (categoryId, imageId, updates) => {
     try {
-      const nextGallery = await updateGalleryImageCaption(categoryId, imageId, caption)
+      const nextGallery = await updateGalleryImageDetails(categoryId, imageId, updates)
       setGallery(nextGallery)
-      setNotice('Photo caption saved.')
+      setNotice('Photo details saved.')
     } catch (error) {
-      setNotice(error.message || 'The caption could not be saved.')
+      setNotice(error.message || 'The photo details could not be saved.')
     }
   }
 
@@ -347,7 +347,7 @@ export default function AdminDashboard({ onNavigate }) {
           {activeView === 'gallery' && (
             <>
               <div className="admin-page-heading">
-                <div><p className="admin-kicker">Content manager</p><h1>Fur Gallery</h1><span>Upload photos and add a dog’s name or short caption.</span></div>
+                <div><p className="admin-kicker">Content manager</p><h1>Fur Gallery</h1><span>Upload photos and add the pet’s name and a separate caption.</span></div>
                 <a className="admin-secondary-action" href="/fur-gallery" onClick={onNavigate?.('/fur-gallery')}><ExternalLink /> Preview gallery</a>
               </div>
               {notice && <div className="admin-notice" role="status"><Check /> {notice}</div>}
@@ -367,25 +367,41 @@ export default function AdminDashboard({ onNavigate }) {
                         <div className="admin-image-grid">
                           {images.map((image) => (
                             <article key={image.id}>
-                              <img src={image.src} alt={image.name || ''} />
-                              <label>
-                                Caption or dog’s name
-                                <input
-                                  type="text"
-                                  defaultValue={image.name}
-                                  placeholder="e.g. Bella"
-                                  maxLength="80"
-                                  onBlur={(event) => {
-                                    if (event.target.value.trim() !== image.name) {
-                                      handleCaptionSave(category.id, image.id, event.target.value)
-                                    }
-                                  }}
-                                />
-                              </label>
+                              <img src={image.src} alt={image.petName || image.caption || ''} />
+                              <div className="admin-gallery-fields">
+                                <label>
+                                  Pet’s name
+                                  <input
+                                    type="text"
+                                    defaultValue={image.petName}
+                                    placeholder="e.g. Bella"
+                                    maxLength="50"
+                                    onBlur={(event) => {
+                                      if (event.target.value.trim() !== image.petName) {
+                                        handleGalleryDetailsSave(category.id, image.id, { petName: event.target.value })
+                                      }
+                                    }}
+                                  />
+                                </label>
+                                <label>
+                                  Caption
+                                  <textarea
+                                    defaultValue={image.caption}
+                                    placeholder="Add a short note about this photo"
+                                    maxLength="160"
+                                    rows="3"
+                                    onBlur={(event) => {
+                                      if (event.target.value.trim() !== image.caption) {
+                                        handleGalleryDetailsSave(category.id, image.id, { caption: event.target.value })
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
                               <button type="button" onClick={async () => {
                                 const nextGallery = await deleteGalleryImage(category.id, image.id)
                                 setGallery(nextGallery)
-                              }} aria-label={`Delete ${image.name || 'gallery photo'}`}><Trash2 /></button>
+                              }} aria-label={`Delete ${image.petName || image.caption || 'gallery photo'}`}><Trash2 /></button>
                             </article>
                           ))}
                         </div>

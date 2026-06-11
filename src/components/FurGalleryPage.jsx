@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Images } from 'lucide-react'
 import FloatingBubblesBackground from '@/components/ui/floating-bubbles-background'
 import { Reveal } from '@/components/ui/reveal'
@@ -6,6 +7,7 @@ import { galleryCategories, getGalleryState, subscribeToCrmUpdates } from '@/lib
 
 export default function FurGalleryPage({ onNavigate }) {
   const [gallery, setGallery] = useState(() => getGalleryState())
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => subscribeToCrmUpdates(() => setGallery(getGalleryState())), [])
 
@@ -16,7 +18,8 @@ export default function FurGalleryPage({ onNavigate }) {
     return images.map((image, index) => ({
       key: `${category.id}-${image.id}`,
       image: image.src,
-      caption: image.name,
+      petName: image.petName,
+      caption: image.caption,
       index: index + 1,
     }))
   }), [gallery])
@@ -36,18 +39,29 @@ export default function FurGalleryPage({ onNavigate }) {
       <section className="fur-results-panel" aria-label="Grooming result gallery">
         <div className="fur-results-intro">
           <span>Recent gallery</span>
-          <p>Each photo can include the pet’s name or a short caption.</p>
         </div>
         <div className="fur-results-grid">
-          {galleryItems.map((item) => (
-            <Reveal className="gallery-result-reveal" key={item.key}>
+          {galleryItems.map((item, index) => (
+            <motion.div
+              className="gallery-result-reveal"
+              key={item.key}
+              initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : Math.min(index, 5) * 0.06 }}
+            >
               <article className="gallery-result-card">
                 <div className="gallery-result-media">
-                  <img src={item.image} alt={item.caption || `Grooming gallery photo ${item.index}`} loading="lazy" />
+                  <img src={item.image} alt={item.petName || item.caption || `Grooming gallery photo ${item.index}`} loading="lazy" />
                 </div>
-                {item.caption && <p className="gallery-result-caption">{item.caption}</p>}
+                {(item.petName || item.caption) && (
+                  <div className="gallery-result-copy">
+                    {item.petName && <h2>{item.petName}</h2>}
+                    {item.caption && <p>{item.caption}</p>}
+                  </div>
+                )}
               </article>
-            </Reveal>
+            </motion.div>
           ))}
           {!galleryItems.length && (
             <div className="fur-gallery-empty">

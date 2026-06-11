@@ -113,10 +113,12 @@ function normalizeGalleryRows(rows) {
       return String(a.created_at || '').localeCompare(String(b.created_at || ''))
     })
     .forEach((row) => {
+      const caption = row.is_default && /^Gallery image \d+$/.test(row.name || '') ? '' : row.name || ''
       gallery.gallery.push({
         id: row.id,
         src: row.src,
-        name: row.name,
+        caption,
+        petName: row.pet_name || '',
         isDefault: Boolean(row.is_default),
       })
     })
@@ -127,7 +129,8 @@ function normalizeGalleryRows(rows) {
       gallery[category.id]?.length ? gallery[category.id] : category.defaultImages.map((src, index) => ({
         id: `${category.id}-default-${index}`,
         src,
-        name: `Gallery image ${index + 1}`,
+        caption: '',
+        petName: '',
         isDefault: true,
       })),
     ]),
@@ -173,7 +176,8 @@ function defaultGalleryState() {
       category.defaultImages.map((src, index) => ({
         id: `${category.id}-default-${index}`,
         src,
-        name: `Gallery image ${index + 1}`,
+        caption: '',
+        petName: '',
         isDefault: true,
       })),
     ]),
@@ -183,10 +187,16 @@ function defaultGalleryState() {
 export function getGalleryState() {
   const stored = read(GALLERY_KEY, null)
   if (!stored) return defaultGalleryState()
-  if (Array.isArray(stored.gallery)) return stored
+  const images = Array.isArray(stored.gallery)
+    ? stored.gallery
+    : Object.values(stored).flatMap((items) => Array.isArray(items) ? items : [])
 
   return {
-    gallery: Object.values(stored).flatMap((images) => Array.isArray(images) ? images : []),
+    gallery: images.map((image) => ({
+      ...image,
+      caption: image.caption ?? image.name ?? '',
+      petName: image.petName ?? '',
+    })),
   }
 }
 
@@ -276,12 +286,16 @@ export async function addGalleryImages(categoryId, images) {
   const rows = images.map((image, index) => ({
     id: image.id,
     category_id: categoryId,
-    name: image.name,
+    name: '',
+    pet_name: '',
     src: image.src,
     is_default: false,
     sort_order: existingCount + index + 1,
   }))
-  state[categoryId] = [...(state[categoryId] || []), ...images]
+  state[categoryId] = [
+    ...(state[categoryId] || []),
+    ...images.map((image) => ({ ...image, caption: '', petName: '' })),
+  ]
 
   if (SUPABASE_ENABLED) {
     await supabaseRequest('/gallery_images', {
@@ -310,18 +324,26 @@ export async function deleteGalleryImage(categoryId, imageId) {
   return state
 }
 
-export async function updateGalleryImageCaption(categoryId, imageId, caption) {
+export async function updateGalleryImageDetails(categoryId, imageId, updates) {
   const state = getGalleryState()
   const image = (state[categoryId] || []).find((item) => item.id === imageId)
   if (!image) return state
 
-  image.name = caption.trim()
+  const patch = {}
+  if (updates.caption !== undefined) {
+    image.caption = updates.caption.trim()
+    patch.name = image.caption
+  }
+  if (updates.petName !== undefined) {
+    image.petName = updates.petName.trim()
+    patch.pet_name = image.petName
+  }
 
   if (SUPABASE_ENABLED) {
     await supabaseRequest(`/gallery_images?id=eq.${encodeURIComponent(imageId)}`, {
       method: 'PATCH',
       headers: supabaseHeaders({ Prefer: 'return=representation' }),
-      body: JSON.stringify({ name: image.name }),
+      body: JSON.stringify(patch),
     })
   }
 
@@ -338,14 +360,16 @@ export async function restoreGalleryDefaults(categoryId) {
     id: `${category.id}-default-${index}`,
     category_id: category.id,
     src,
-    name: `Gallery image ${index + 1}`,
+    name: '',
+    pet_name: '',
     is_default: true,
     sort_order: index,
   }))
   state[categoryId] = defaults.map((image) => ({
     id: image.id,
     src: image.src,
-    name: image.name,
+    caption: '',
+    petName: '',
     isDefault: true,
   }))
 

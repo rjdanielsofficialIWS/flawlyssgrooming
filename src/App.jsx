@@ -482,7 +482,7 @@ function App() {
             </fieldset>
             <label>Special instructions<textarea name="notes" rows="4" placeholder="Temperament, allergies, medical details, preferred style, or anything else we should know..." /></label>
             <button className="button button-primary submit-button" type="submit">Send appointment request <ArrowRight /></button>
-            {submitted && <p className="success-message" role="status"><Check /> Thanks! Your request is ready to be connected to email or a booking system.</p>}
+            {submitted && <p className="success-message" role="status"><Check /> Thanks! Your appointment request has been sent.</p>}
           </form>
         </section>
 

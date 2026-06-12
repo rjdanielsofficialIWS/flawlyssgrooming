@@ -489,6 +489,15 @@ export async function saveBookingRequest(request) {
   }
 
   write(REQUESTS_KEY, [savedRequest, ...requests])
+
+  fetch('/api/discord-booking', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(savedRequest),
+  }).catch((error) => {
+    console.error('Discord booking notification failed:', error)
+  })
+
   return savedRequest
 }
 

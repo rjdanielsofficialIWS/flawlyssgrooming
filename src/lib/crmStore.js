@@ -117,6 +117,7 @@ function normalizeGalleryRows(rows) {
       gallery.gallery.push({
         id: row.id,
         src: row.src,
+        secondSrc: row.second_src || '',
         caption,
         petName: row.pet_name || '',
         isDefault: Boolean(row.is_default),
@@ -129,6 +130,7 @@ function normalizeGalleryRows(rows) {
       gallery[category.id]?.length ? gallery[category.id] : category.defaultImages.map((src, index) => ({
         id: `${category.id}-default-${index}`,
         src,
+        secondSrc: '',
         caption: '',
         petName: '',
         isDefault: true,
@@ -176,6 +178,7 @@ function defaultGalleryState() {
       category.defaultImages.map((src, index) => ({
         id: `${category.id}-default-${index}`,
         src,
+        secondSrc: '',
         caption: '',
         petName: '',
         isDefault: true,
@@ -196,6 +199,7 @@ export function getGalleryState() {
       ...image,
       caption: image.caption ?? image.name ?? '',
       petName: image.petName ?? '',
+      secondSrc: image.secondSrc ?? '',
     })),
   }
 }
@@ -289,12 +293,13 @@ export async function addGalleryImages(categoryId, images) {
     name: '',
     pet_name: '',
     src: image.src,
+    second_src: '',
     is_default: false,
     sort_order: existingCount + index + 1,
   }))
   state[categoryId] = [
     ...(state[categoryId] || []),
-    ...images.map((image) => ({ ...image, caption: '', petName: '' })),
+    ...images.map((image) => ({ ...image, secondSrc: '', caption: '', petName: '' })),
   ]
 
   if (SUPABASE_ENABLED) {
@@ -351,6 +356,25 @@ export async function updateGalleryImageDetails(categoryId, imageId, updates) {
   return state
 }
 
+export async function updateGallerySecondImage(categoryId, imageId, image) {
+  const state = getGalleryState()
+  const galleryImage = (state[categoryId] || []).find((item) => item.id === imageId)
+  if (!galleryImage) return state
+
+  galleryImage.secondSrc = image?.src || ''
+
+  if (SUPABASE_ENABLED) {
+    await supabaseRequest(`/gallery_images?id=eq.${encodeURIComponent(imageId)}`, {
+      method: 'PATCH',
+      headers: supabaseHeaders({ Prefer: 'return=representation' }),
+      body: JSON.stringify({ second_src: galleryImage.secondSrc }),
+    })
+  }
+
+  write(GALLERY_KEY, state)
+  return state
+}
+
 export async function restoreGalleryDefaults(categoryId) {
   const state = getGalleryState()
   const category = galleryCategories.find((item) => item.id === categoryId)
@@ -360,6 +384,7 @@ export async function restoreGalleryDefaults(categoryId) {
     id: `${category.id}-default-${index}`,
     category_id: category.id,
     src,
+    second_src: '',
     name: '',
     pet_name: '',
     is_default: true,
@@ -368,6 +393,7 @@ export async function restoreGalleryDefaults(categoryId) {
   state[categoryId] = defaults.map((image) => ({
     id: image.id,
     src: image.src,
+    secondSrc: '',
     caption: '',
     petName: '',
     isDefault: true,

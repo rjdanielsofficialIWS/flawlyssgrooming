@@ -45,6 +45,7 @@ import {
   subscribeToCrmUpdates,
   updateBookingRequest,
   updateGalleryImageDetails,
+  updateGallerySecondImage,
   verifyAdminPasscode,
 } from '@/lib/crmStore'
 
@@ -81,6 +82,7 @@ export default function AdminDashboard({ onNavigate }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [uploadingCategory, setUploadingCategory] = useState('')
+  const [uploadingSecondImageId, setUploadingSecondImageId] = useState('')
   const [uploadingMediaSlot, setUploadingMediaSlot] = useState('')
   const [notice, setNotice] = useState('')
   const [currentPasscode, setCurrentPasscode] = useState('')
@@ -165,6 +167,23 @@ export default function AdminDashboard({ onNavigate }) {
       setNotice('Photo details saved.')
     } catch (error) {
       setNotice(error.message || 'The photo details could not be saved.')
+    }
+  }
+
+  const handleSecondImageUpload = async (categoryId, imageId, files) => {
+    if (!files.length) return
+    setUploadingSecondImageId(imageId)
+    setNotice('')
+
+    try {
+      const image = await compressImage(files[0])
+      const nextGallery = await updateGallerySecondImage(categoryId, imageId, image)
+      setGallery(nextGallery)
+      setNotice('Second photo saved.')
+    } catch (error) {
+      setNotice(error.message || 'The second photo could not be saved.')
+    } finally {
+      setUploadingSecondImageId('')
     }
   }
 
@@ -367,8 +386,37 @@ export default function AdminDashboard({ onNavigate }) {
                         <div className="admin-image-grid">
                           {images.map((image) => (
                             <article key={image.id}>
-                              <img src={image.src} alt={image.petName || image.caption || ''} />
+                              <div className={image.secondSrc ? 'admin-gallery-photo-pair' : 'admin-gallery-photo-pair is-single'}>
+                                <img src={image.src} alt={image.petName || image.caption || ''} />
+                                {image.secondSrc && <img src={image.secondSrc} alt="" />}
+                              </div>
                               <div className="admin-gallery-fields">
+                                <div className="admin-second-photo-actions">
+                                  <label className="admin-second-photo-button">
+                                    <Upload /> {uploadingSecondImageId === image.id ? 'Processing...' : image.secondSrc ? 'Replace second photo' : 'Add second photo'}
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      disabled={uploadingSecondImageId === image.id}
+                                      onChange={(event) => {
+                                        handleSecondImageUpload(category.id, image.id, event.target.files)
+                                        event.target.value = ''
+                                      }}
+                                    />
+                                  </label>
+                                  {image.secondSrc && (
+                                    <button
+                                      className="admin-remove-second-photo"
+                                      type="button"
+                                      onClick={async () => {
+                                        const nextGallery = await updateGallerySecondImage(category.id, image.id, null)
+                                        setGallery(nextGallery)
+                                      }}
+                                    >
+                                      Remove second
+                                    </button>
+                                  )}
+                                </div>
                                 <label>
                                   Pet’s name
                                   <input
@@ -398,7 +446,7 @@ export default function AdminDashboard({ onNavigate }) {
                                   />
                                 </label>
                               </div>
-                              <button type="button" onClick={async () => {
+                              <button className="admin-delete-gallery-entry" type="button" onClick={async () => {
                                 const nextGallery = await deleteGalleryImage(category.id, image.id)
                                 setGallery(nextGallery)
                               }} aria-label={`Delete ${image.petName || image.caption || 'gallery photo'}`}><Trash2 /></button>

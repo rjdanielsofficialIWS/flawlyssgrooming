@@ -110,6 +110,7 @@ function App() {
   const [gallery, setGallery] = useState(() => getGalleryState())
   const [homepageMedia, setHomepageMediaState] = useState(() => getHomepageMedia())
   const journalVideoRef = useRef(null)
+  const comparisonDraggingRef = useRef(false)
   const isFurGalleryPage = pathname === '/fur-gallery'
   const isAdminPage = pathname.startsWith('/admin')
 
@@ -176,6 +177,29 @@ function App() {
   }, [gallery])
 
   const selectedService = services[activeService]
+
+  const updateComparisonFromPointer = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const nextValue = ((event.clientX - rect.left) / rect.width) * 100
+    setSlider(Math.max(0, Math.min(100, nextValue)))
+  }
+
+  const handleComparisonPointerDown = (event) => {
+    comparisonDraggingRef.current = true
+    event.currentTarget.setPointerCapture(event.pointerId)
+    updateComparisonFromPointer(event)
+  }
+
+  const handleComparisonPointerMove = (event) => {
+    if (comparisonDraggingRef.current) updateComparisonFromPointer(event)
+  }
+
+  const handleComparisonPointerEnd = (event) => {
+    comparisonDraggingRef.current = false
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
 
   const navigateTo = (to) => (event) => {
     event.preventDefault()
@@ -277,7 +301,13 @@ function App() {
           </div>
           <div className="transformation-layout">
             <Reveal className="transformation-stage">
-              <div className="before-after">
+              <div
+                className="before-after"
+                onPointerDown={handleComparisonPointerDown}
+                onPointerMove={handleComparisonPointerMove}
+                onPointerUp={handleComparisonPointerEnd}
+                onPointerCancel={handleComparisonPointerEnd}
+              >
                 <div className="comparison-image before" style={{ backgroundImage: `url("${homepageMedia['transformation-before'].src}")` }} aria-hidden="true" />
                 <div className="comparison-image after" style={{ backgroundImage: `url("${homepageMedia['transformation-after'].src}")`, clipPath: `inset(0 0 0 ${slider}%)` }} aria-hidden="true" />
                 <div className="image-label before-label">Before</div>

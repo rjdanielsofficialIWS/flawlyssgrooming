@@ -22,6 +22,7 @@ import {
   X,
 } from 'lucide-react'
 import {
+  addGalleryPetPhotos,
   addGalleryImages,
   compressImage,
   deleteBookingRequest,
@@ -34,6 +35,7 @@ import {
   loadGalleryState,
   loadHomepageMedia,
   homepageMediaSlots,
+  removeGalleryPetPhoto,
   restoreGalleryDefaults,
   restoreHomepageMedia,
   readVideoFile,
@@ -45,7 +47,6 @@ import {
   subscribeToCrmUpdates,
   updateBookingRequest,
   updateGalleryImageDetails,
-  updateGallerySecondImage,
   verifyAdminPasscode,
 } from '@/lib/crmStore'
 
@@ -82,7 +83,7 @@ export default function AdminDashboard({ onNavigate }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [uploadingCategory, setUploadingCategory] = useState('')
-  const [uploadingSecondImageId, setUploadingSecondImageId] = useState('')
+  const [uploadingPetPhotosId, setUploadingPetPhotosId] = useState('')
   const [uploadingMediaSlot, setUploadingMediaSlot] = useState('')
   const [notice, setNotice] = useState('')
   const [currentPasscode, setCurrentPasscode] = useState('')
@@ -170,20 +171,20 @@ export default function AdminDashboard({ onNavigate }) {
     }
   }
 
-  const handleSecondImageUpload = async (categoryId, imageId, files) => {
+  const handlePetPhotosUpload = async (categoryId, imageId, files) => {
     if (!files.length) return
-    setUploadingSecondImageId(imageId)
+    setUploadingPetPhotosId(imageId)
     setNotice('')
 
     try {
-      const image = await compressImage(files[0])
-      const nextGallery = await updateGallerySecondImage(categoryId, imageId, image)
+      const images = await Promise.all(Array.from(files).map(compressImage))
+      const nextGallery = await addGalleryPetPhotos(categoryId, imageId, images)
       setGallery(nextGallery)
-      setNotice('Second photo saved.')
+      setNotice(`${images.length} photo${images.length === 1 ? '' : 's'} added to this pet.`)
     } catch (error) {
-      setNotice(error.message || 'The second photo could not be saved.')
+      setNotice(error.message || 'The additional photos could not be saved.')
     } finally {
-      setUploadingSecondImageId('')
+      setUploadingPetPhotosId('')
     }
   }
 
@@ -386,36 +387,41 @@ export default function AdminDashboard({ onNavigate }) {
                         <div className="admin-image-grid">
                           {images.map((image) => (
                             <article key={image.id}>
-                              <div className={image.secondSrc ? 'admin-gallery-photo-pair' : 'admin-gallery-photo-pair is-single'}>
-                                <img src={image.src} alt={image.petName || image.caption || ''} />
-                                {image.secondSrc && <img src={image.secondSrc} alt="" />}
+                              <div className="admin-gallery-photo-list">
+                                {[image.src, ...(image.additionalSrcs || [])].map((src, photoIndex) => (
+                                  <div key={`${image.id}-${photoIndex}`}>
+                                    <img src={src} alt={photoIndex === 0 ? image.petName || image.caption || '' : ''} />
+                                    {photoIndex > 0 && (
+                                      <button
+                                        type="button"
+                                        aria-label={`Remove photo ${photoIndex + 1}`}
+                                        onClick={async () => {
+                                          const nextGallery = await removeGalleryPetPhoto(category.id, image.id, photoIndex - 1)
+                                          setGallery(nextGallery)
+                                        }}
+                                      >
+                                        <X />
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                               <div className="admin-gallery-fields">
-                                <div className="admin-second-photo-actions">
-                                  <label className="admin-second-photo-button">
-                                    <Upload /> {uploadingSecondImageId === image.id ? 'Processing...' : image.secondSrc ? 'Replace second photo' : 'Add second photo'}
+                                <div className="admin-pet-photo-actions">
+                                  <label className="admin-add-pet-photos-button">
+                                    <Upload /> {uploadingPetPhotosId === image.id ? 'Processing...' : 'Add more photos'}
                                     <input
                                       type="file"
                                       accept="image/*"
-                                      disabled={uploadingSecondImageId === image.id}
+                                      multiple
+                                      disabled={uploadingPetPhotosId === image.id}
                                       onChange={(event) => {
-                                        handleSecondImageUpload(category.id, image.id, event.target.files)
+                                        handlePetPhotosUpload(category.id, image.id, event.target.files)
                                         event.target.value = ''
                                       }}
                                     />
                                   </label>
-                                  {image.secondSrc && (
-                                    <button
-                                      className="admin-remove-second-photo"
-                                      type="button"
-                                      onClick={async () => {
-                                        const nextGallery = await updateGallerySecondImage(category.id, image.id, null)
-                                        setGallery(nextGallery)
-                                      }}
-                                    >
-                                      Remove second
-                                    </button>
-                                  )}
+                                  <span>{1 + (image.additionalSrcs || []).length} photos</span>
                                 </div>
                                 <label>
                                   Pet’s name

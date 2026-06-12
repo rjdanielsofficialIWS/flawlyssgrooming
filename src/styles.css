@@ -1411,28 +1411,42 @@ em {
 
 .gallery-result-media {
   position: relative;
-  overflow: hidden;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
   aspect-ratio: 1 / 1;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
   background:
     radial-gradient(circle at 50% 40%, rgba(255,255,255,.88), transparent 42%),
     linear-gradient(135deg, var(--cream), #f8dce4);
 }
 
 .gallery-result-media img {
-  width: 100%;
+  min-width: 100%;
   height: 100%;
+  flex: 0 0 100%;
   object-fit: cover;
+  scroll-snap-align: start;
   transition: transform 450ms cubic-bezier(.22,1,.36,1);
 }
 
-.gallery-result-media.has-two-images {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
-}
-
-.gallery-result-media.has-two-images img {
-  min-width: 0;
+.gallery-photo-count {
+  position: sticky;
+  right: 12px;
+  bottom: 12px;
+  align-self: flex-end;
+  flex: 0 0 auto;
+  margin: 0 12px 12px -120px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(45,21,87,.82);
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  pointer-events: none;
+  text-transform: uppercase;
 }
 
 .gallery-result-card:hover .gallery-result-media img {
@@ -3141,20 +3155,23 @@ fieldset + label {
   background: #faf8fb;
 }
 
-.admin-gallery-photo-pair {
+.admin-gallery-photo-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  padding: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px;
   background: var(--admin-border);
 }
 
-.admin-gallery-photo-pair.is-single {
-  grid-template-columns: 1fr;
+.admin-gallery-photo-list > div {
+  position: relative;
+  min-width: 0;
 }
 
-.admin-gallery-photo-pair img {
+.admin-gallery-photo-list img {
   width: 100%;
-  aspect-ratio: 1.3 / 1;
+  height: 100%;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
 }
 
@@ -3174,14 +3191,13 @@ fieldset + label {
   text-transform: uppercase;
 }
 
-.admin-second-photo-actions {
+.admin-pet-photo-actions {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.admin-second-photo-button,
-.admin-remove-second-photo {
+.admin-add-pet-photos-button {
   display: inline-flex;
   min-height: 36px;
   padding: 7px 10px;
@@ -3199,11 +3215,11 @@ fieldset + label {
   text-transform: none;
 }
 
-.admin-second-photo-button svg {
+.admin-add-pet-photos-button svg {
   width: 14px;
 }
 
-.admin-image-grid .admin-second-photo-button input {
+.admin-image-grid .admin-add-pet-photos-button input {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -3214,8 +3230,30 @@ fieldset + label {
   pointer-events: none;
 }
 
-.admin-remove-second-photo {
-  color: #ad2b55;
+.admin-pet-photo-actions span {
+  color: var(--admin-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.admin-gallery-photo-list button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(45,21,87,.82);
+  color: white;
+  cursor: pointer;
+  place-items: center;
+}
+
+.admin-gallery-photo-list button svg {
+  width: 13px;
 }
 
 .admin-image-grid input,

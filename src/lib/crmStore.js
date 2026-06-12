@@ -117,7 +117,9 @@ function normalizeGalleryRows(rows) {
       gallery.gallery.push({
         id: row.id,
         src: row.src,
-        secondSrc: row.second_src || '',
+        additionalSrcs: Array.isArray(row.additional_srcs)
+          ? row.additional_srcs
+          : row.second_src ? [row.second_src] : [],
         caption,
         petName: row.pet_name || '',
         isDefault: Boolean(row.is_default),
@@ -130,7 +132,7 @@ function normalizeGalleryRows(rows) {
       gallery[category.id]?.length ? gallery[category.id] : category.defaultImages.map((src, index) => ({
         id: `${category.id}-default-${index}`,
         src,
-        secondSrc: '',
+        additionalSrcs: [],
         caption: '',
         petName: '',
         isDefault: true,
@@ -178,7 +180,7 @@ function defaultGalleryState() {
       category.defaultImages.map((src, index) => ({
         id: `${category.id}-default-${index}`,
         src,
-        secondSrc: '',
+        additionalSrcs: [],
         caption: '',
         petName: '',
         isDefault: true,
@@ -199,7 +201,9 @@ export function getGalleryState() {
       ...image,
       caption: image.caption ?? image.name ?? '',
       petName: image.petName ?? '',
-      secondSrc: image.secondSrc ?? '',
+      additionalSrcs: Array.isArray(image.additionalSrcs)
+        ? image.additionalSrcs
+        : image.secondSrc ? [image.secondSrc] : [],
     })),
   }
 }
@@ -293,13 +297,13 @@ export async function addGalleryImages(categoryId, images) {
     name: '',
     pet_name: '',
     src: image.src,
-    second_src: '',
+    additional_srcs: [],
     is_default: false,
     sort_order: existingCount + index + 1,
   }))
   state[categoryId] = [
     ...(state[categoryId] || []),
-    ...images.map((image) => ({ ...image, secondSrc: '', caption: '', petName: '' })),
+    ...images.map((image) => ({ ...image, additionalSrcs: [], caption: '', petName: '' })),
   ]
 
   if (SUPABASE_ENABLED) {
@@ -356,18 +360,40 @@ export async function updateGalleryImageDetails(categoryId, imageId, updates) {
   return state
 }
 
-export async function updateGallerySecondImage(categoryId, imageId, image) {
+export async function addGalleryPetPhotos(categoryId, imageId, images) {
   const state = getGalleryState()
   const galleryImage = (state[categoryId] || []).find((item) => item.id === imageId)
   if (!galleryImage) return state
 
-  galleryImage.secondSrc = image?.src || ''
+  galleryImage.additionalSrcs = [
+    ...(galleryImage.additionalSrcs || []),
+    ...images.map((image) => image.src),
+  ]
 
   if (SUPABASE_ENABLED) {
     await supabaseRequest(`/gallery_images?id=eq.${encodeURIComponent(imageId)}`, {
       method: 'PATCH',
       headers: supabaseHeaders({ Prefer: 'return=representation' }),
-      body: JSON.stringify({ second_src: galleryImage.secondSrc }),
+      body: JSON.stringify({ additional_srcs: galleryImage.additionalSrcs }),
+    })
+  }
+
+  write(GALLERY_KEY, state)
+  return state
+}
+
+export async function removeGalleryPetPhoto(categoryId, imageId, photoIndex) {
+  const state = getGalleryState()
+  const galleryImage = (state[categoryId] || []).find((item) => item.id === imageId)
+  if (!galleryImage) return state
+
+  galleryImage.additionalSrcs = (galleryImage.additionalSrcs || []).filter((_, index) => index !== photoIndex)
+
+  if (SUPABASE_ENABLED) {
+    await supabaseRequest(`/gallery_images?id=eq.${encodeURIComponent(imageId)}`, {
+      method: 'PATCH',
+      headers: supabaseHeaders({ Prefer: 'return=representation' }),
+      body: JSON.stringify({ additional_srcs: galleryImage.additionalSrcs }),
     })
   }
 
@@ -384,7 +410,7 @@ export async function restoreGalleryDefaults(categoryId) {
     id: `${category.id}-default-${index}`,
     category_id: category.id,
     src,
-    second_src: '',
+    additional_srcs: [],
     name: '',
     pet_name: '',
     is_default: true,
@@ -393,7 +419,7 @@ export async function restoreGalleryDefaults(categoryId) {
   state[categoryId] = defaults.map((image) => ({
     id: image.id,
     src: image.src,
-    secondSrc: '',
+    additionalSrcs: [],
     caption: '',
     petName: '',
     isDefault: true,
